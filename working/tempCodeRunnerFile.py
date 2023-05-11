@@ -1,0 +1,1 @@
+from label_all import get_label
