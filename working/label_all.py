@@ -2,7 +2,7 @@ import pickle
 import os
 import csv
 
-full_path = "C:\\Users\\eatron1\\Desktop\\termproject-main\\termproject-main\\working\\"
+full_path = "D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\working\\"
 
 def label_directory(directory):
     # Load the CSV file
@@ -46,7 +46,7 @@ def get_label(filename):
             '0'): row['ClassName_tr'] for row in reader}
     # Extract the ClassID from the filename
     class_id = filename.split('_')[-1].rstrip('.pickle').lstrip('0')
-    class_id=int(class_id)
+    #class_id=int(class_id)
     # Look up the label based on the ClassID
     if class_id in labels:
         label = labels[class_id]
