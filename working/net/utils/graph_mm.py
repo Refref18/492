@@ -34,9 +34,19 @@ class Graph():
         self.hop_dis = get_hop_distance(
             self.num_node, self.edge, max_hop=max_hop)
         self.get_adjacency(strategy)
+        
 
     def __str__(self):
         return self.A
+    
+    def get_unique_nodes(self,connections):
+        unique_nodes = set()
+        for cn in connections:
+            unique_nodes.add(cn[0])
+            unique_nodes.add(cn[1])
+
+        return sorted(unique_nodes)
+
 
     def get_edge(self, layout):
         if layout == 'openpose':
@@ -54,6 +64,7 @@ class Graph():
             neighbor_link = [(0,1),(0,9),(0,17),(1,9),(1,10),(1,2),(1,3),(1,4),(2,10),(2,11),(2,13),(2,3),(3,13),(3,14),(3,4),(4,14),(4,15),(4,5),(5,15),(5,19),(6,12),(6,13),(6,11),(6,17),(6,18),(6,7),(6,8),(7,8),(7,18),(8,18),(8,19),(8,13),(8,16),(9,17),(9,12),(9,10),(10,11),(10,12),(11,12),(11,13),(12,17),(13,14),(13,16),(14,15),(14,16),(15,16),(15,19),(16,19),(17,18),(17,20),(18,19),(18,20),(19,20)]
             self.edge = self_link + neighbor_link
             self.center = 1
+            self.unique_nodes=self.get_unique_nodes(neighbor_link)
         # elif layout=='customer settings'
         #     pass
         else:
@@ -101,6 +112,8 @@ class Graph():
                     A.append(a_further)
             A = np.stack(A)
             self.A = A
+            #print(self.A)
+            #print(self.unique_nodes)
         else:
             raise ValueError("Do Not Exist This Strategy")
 
@@ -140,3 +153,5 @@ def normalize_undigraph(A):
             Dn[i, i] = Dl[i]**(-0.5)
     DAD = np.dot(np.dot(Dn, A), Dn)
     return DAD
+
+

@@ -26,12 +26,12 @@ class Model(nn.Module):
             :math:`M_{in}` is the number of instance in a frame.
     """
 
-    def __init__(self, in_channels, num_class, graph_args,
+    def __init__(self, in_channels, num_class, graph,
                  edge_importance_weighting, **kwargs):
         super().__init__()
 
         # load graph
-        self.graph = Graph(**graph_args)
+        self.graph =graph
         A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.register_buffer('A', A)
 
@@ -67,9 +67,16 @@ class Model(nn.Module):
         self.fcn = nn.Conv2d(256, num_class, kernel_size=1)
 
     def forward(self, x):
-
+        #Datanın formation'ı
+        #TODO
+        #print(x)
+        
         # data normalization
         N, C, T, V, M = x.size()
+        print(N, C, T, V, M)
+        #M=1
+        #tek batch için tek T max_length
+        
         x = x.permute(0, 4, 3, 1, 2).contiguous()
         x = x.view(N * M, V * C, T)
         x = self.data_bn(x)
@@ -92,6 +99,7 @@ class Model(nn.Module):
         return x
 
     def extract_feature(self, x):
+        
 
         # data normalization
         N, C, T, V, M = x.size()

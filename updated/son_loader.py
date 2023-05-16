@@ -18,10 +18,11 @@ import tensorflow as tf
 
 
 class VideoPoseDataset(Dataset):
-    def __init__(self, root_dir, info_file, train=True, transform=None, label_dict=None, index_to_label=None):
+    def __init__(self, root_dir, info_file, train=True, transform=None, label_dict=None, index_to_label=None,unique_nodes=None):
         self.root_dir = root_dir
         self.transform = transform
         self.train = train
+        self.unique_nodes=unique_nodes
         
         #info_df = pd.read_csv(full_path+info_file)
         dtypes = {"RepeatID": str, "ClassID": str}
@@ -49,6 +50,10 @@ class VideoPoseDataset(Dataset):
     def __len__(self):
         return len(self.info_df)
     
+    
+        
+        
+    
     def __getitem__(self, idx):
         row = self.info_df.iloc[idx]
         label = self.label_dict[row['ClassID']]
@@ -62,18 +67,35 @@ class VideoPoseDataset(Dataset):
         file_path = os.path.join(folder, filename)
         # check if the file exists before attempting to read it
         #print(file_path)
-        if os.path.exists(file_path):
-            video_data=datafilter(file_path)
-            #print(video_data)
-            
-            if self.transform:
-                video_data = self.transform(video_data)
+        #if os.path.exists(file_path):#bunu koymaman lazım 
+        video_data=datafilter(file_path)
+        #print(video_data)
+        #video_data=self.process_skeleton(video_data,self.unique_nodes)
+        #print(video_data.shape)
+        if self.transform:
+            video_data = self.transform(video_data)
 
-            return video_data, label
+        return video_data, label
         """if self.transform:
             video_data = self.transform(video_data)"""
         #print(video_data)
-        return video_data, label
+        #return video_data, label
+
+
+def process_skeleton(input_raw, nodes):
+    # print(input_raw)
+    input_raw = {**input_raw['face']}
+    keys = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',
+            'left_eyebrow_47', 'left_eyebrow_49', 'nose_54', 'nose_56', 'nose_58',
+            'right_eye_59', 'right_eye_60', 'right_eye_62', 'right_eye_63', 'left_eye_65', 'left_eye_66', 'left_eye_68', 'left_eye_69',
+            'mouth_83', 'mouth_85', 'mouth_87', 'mouth_89']
+    # Convert dictionary values to arrays and apply transpose
+
+    input = np.array([input_raw[jn] for jn in keys]).transpose(2, 1, 0)
+    input = np.expand_dims(input, axis=-1)
+    # .transpose(1,0,2)
+    #print(input.shape)
+    return input
 def custom_collate_fn(batch):
     # Find the maximum sequence length
     #batch-> 4 tüm batchler
@@ -82,6 +104,12 @@ def custom_collate_fn(batch):
     #len(batch[0][0]) .keys() face and label 
     #len(batch[0][0]['face']) 21
     #(batch[0][0]['label']) BOS
+    
+    #-----
+    #len(batch) number of batches
+    #batch[0][0] the nodes
+    #print(batch[0][0].shape)
+    #print(batch[0][0])
     max_length = max(
         len(sample[0]['face']['right_eyebrow_40']) for sample in batch)
     # print(batch[0]['label'])
@@ -92,14 +120,19 @@ def custom_collate_fn(batch):
                    'mouth_83', 'mouth_85', 'mouth_87', 'mouth_89', 'right_eye_60', 'right_eye_63', 'left_eye_66', 'left_eye_69']
 
     # Initialize the tensors for the padded batch
-    padded_batch = {'face': {key: [] for key in keys_to_use}}
-    for i in range(max_length):
-        for key in keys_to_use:
-            padded_batch['face'][key].append([])
+    padded_batch_list = [
+        {'face': {key: [None] * max_length for key in keys_to_use}} for _ in range(len(batch))]
+    
+    a={}
+
+    #padded_batch = {'face': {key: [] for key in (keys_to_use)}}
+    """for i in range(max_length):
+        for key in (keys_to_use):
+            padded_batch['face'][key].append([])"""
 
     # Fill the tensors with the data from the batch
-    for sample in batch:
-        for key in keys_to_use:
+    for i,sample in enumerate(batch):
+        for key in (keys_to_use):
             #print(key)
             # Get the data for this key
             data = sample[0]['face'][key]
@@ -114,15 +147,28 @@ def custom_collate_fn(batch):
                 data = np.vstack([data, zero_padding])
                 # print("npstack ",data)
             # print(len(padded_batch['face'][key]),len(data))
+            
 
             # Add the data to the tensor
-            padded_batch['face'][key] = data
+            #print("A",padded_batch_list[i]['face'][key])
+            padded_batch_list[i]['face'][key] = data
+            #print("B",padded_batch_list[i]['face'][key])
+            
+        padded_batch_list[i] = process_skeleton(
+            padded_batch_list[i], [])
+        #print(padded_batch_list[i])
 
     # Convert the numpy arrays to PyTorch tensors
-    for key in keys_to_use:
-        padded_batch['face'][key] = torch.from_numpy(
-            padded_batch['face'][key])
-         # print(padded_batch)
+    """for padded_batch in padded_batch_list:
+        for key in (keys_to_use):
+            padded_batch[0][key] = torch.from_numpy(
+                padded_batch[0][key])
+            # print(padded_batch)"""
+    padded_batch_list_tensor = torch.stack(
+        [torch.from_numpy(arr) for arr in padded_batch_list], dim=0)
+    
+    a['face']=padded_batch_list_tensor
+    
 
     # Convert the labels to PyTorch tensors
     # print([sample['label'] for sample in batch])
@@ -130,10 +176,21 @@ def custom_collate_fn(batch):
     # padded_batch['label'] = [(sample['label']) for sample in batch]
     # padded_batch['label'] = torch.tensor([sample['label'] for sample in batch])
     #padded_batch['label'] = tf.constant([sample['label'] for sample in batch])
-    padded_batch['label'] = torch.LongTensor([sample[1] for sample in batch]) #integera çevrirmek
+    a['label'] = torch.LongTensor(
+        [sample[1] for sample in batch])  # integera çevrirmek
     #print(padded_batch['label'])
+    #print(padded_batch)
+    """Shape:
+        - Input: : math: `(N, in_channels, T_{ in }, V_{ in }, M_{ in })`
+        - Output: : math: `(N, num_class)` where
+        : math: `N` is a batch size,
+            : math: `T_{ in }` is a length of input sequence,
+            : math: `V_{ in }` is the number of graph nodes,
+            : math: `M_{ in }` is the number of instance in a frame.
+            
+    batch_size*3*T*V*M"""
 
-    return padded_batch
+    return a
 
 
 """if __name__ == '__main__':
@@ -145,7 +202,7 @@ def custom_collate_fn(batch):
     # print(dataloader)
 
     for poses in dataloader:
-        print(""),"""
+        print("")"""
 
 
 """# create the train set with new label_dict and index_to_label dictionaries
