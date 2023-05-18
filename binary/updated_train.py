@@ -8,6 +8,7 @@ import os
 import logging
 from son_loader import VideoPoseDataset
 import csv
+import torch.optim.lr_scheduler as lr_scheduler
 from son_loader import custom_collate_fn
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'working')))
 from net.st_gcn import Model
@@ -17,7 +18,8 @@ from net.utils.graph_mm import Graph
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 data_dir = 'D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\mmpose-full'
-info_file="D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\updated\\info_filtered.csv"
+info_file="D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\binary\\info_filtered.csv"
+
 # Initialize dataset and data loader
 graph=Graph(**{"layout": "mmpose", "strategy": "spatial"})
 # create the train set with new label_dict and index_to_label dictionaries
@@ -37,12 +39,19 @@ dataloader_test = DataLoader(test_dataset, batch_size=4, collate_fn=custom_colla
 #x-y confidence pose datasının channel sayısı 
 #dataloaderdan çek num_classes
 
-model = Model( in_channels=3, num_class=744, graph=graph,
+model = Model( in_channels=3, num_class=2, graph=graph,
               edge_importance_weighting=True).to(device)
 
 # Set loss function and optimizer
-criterion = nn.CrossEntropyLoss()#binary!
-optimizer = optim.AdamW(model.parameters(), lr=0.001) #scheculear lr-> plateu lr tolerance azalmadıysa lr ı düşürüyor , ****multistep 0.0001 25 ve 45 yüzde 10 weight decay 10-5
+criterion = nn.BCELoss()  # nn.CrossEntropyLoss()  #  # binary!
+# scheculear lr-> plateu lr tolerance azalmadıysa lr ı düşürüyor , ****multistep 0.0001 25 ve 45 yüzde 10 weight decay 10-5
+optimizer = optim.AdamW(model.parameters(), lr=0.0001, weight_decay=1e-5)
+
+# Define your learning rate scheduler
+milestones = [25, 45]  # Epochs at which to decay the learning rate
+decay_factor = 0.1  # Factor by which to decay the learning rate
+scheduler = lr_scheduler.MultiStepLR(
+    optimizer, milestones=milestones, gamma=decay_factor)
 print(len(dataloader_train))
 # Open CSV file in write mode
 with open('log.csv', mode='w', newline='') as file:
@@ -68,13 +77,24 @@ with open('log.csv', mode='w', newline='') as file:
             # cborn - heat map dpi artır
             # Initialize model
             outputs = model(img)
+            # Reshape the labels to match the output tensor shape
+            reshaped_labels = torch.zeros(outputs.size())
+            reshaped_labels.scatter_(1, labels.unsqueeze(1), 1)
+            # Apply sigmoid function to the outputs
+            probabilities = torch.sigmoid(outputs)
+
+            loss = criterion(probabilities, reshaped_labels)
+
+            #loss = criterion(outputs, reshaped_labels)
+            print("outputs and labels ",outputs," ",labels)
             #outputs = model(inputs.to(device))
             #print("OUTPUT",outputs)
-            #print("Labels",labels)
-            loss = criterion(outputs, labels)
+            #print("Labels",labels) 
+            #loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
+            scheduler.step()
             print(epoch_loss/(i+1))
             
             
