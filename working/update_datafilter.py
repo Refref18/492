@@ -20,7 +20,8 @@ def datafilter(filename):
 
     # Create a new dictionary to store the filtered data
 
-    filtered_data = {'face': {}, 'label': {}}
+    filtered_data = {'face': {}, 'label': {},
+                     'pose': {}, 'hand_left': {}, 'hand_right': {}}
     #print(labels)
     with open(filename, 'rb') as f:
         data = pickle.load(f)
@@ -44,6 +45,12 @@ def datafilter(filename):
             
             filtered_data['face'][key] = np.array([
                 [avg_x, avg_y, avg_prob]] * len(value))
+    active_frame_keys_pose = ['left_hip', 'right_hip', 'nose']
+    for key, value in data['pose'].items():
+        if key in active_frame_keys_pose:
+            filtered_data['pose'][key] = value
+    filtered_data['hand_left']['left_lunate_bone'] = data['hand_left']['left_lunate_bone']
+    filtered_data['hand_right']['right_lunate_bone'] = data['hand_right']['right_lunate_bone']
   
     """
     print(type(filtered_data))

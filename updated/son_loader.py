@@ -81,21 +81,66 @@ class VideoPoseDataset(Dataset):
         #print(video_data)
         #return video_data, label
 
+# Remove dominant movements where signer raises and drops down their hands
+def get_active_frames( input_raw):
+    threshold = ((((input_raw['pose']['left_hip'][:, 1] + input_raw['pose']['right_hip'][:, 1]) / 2) * 7) +
+                 input_raw['pose']['nose'][:, 1]) / 10
 
-def process_skeleton(input_raw, nodes):
-    # print(input_raw)
-    input_raw = {**input_raw['face']}
+    active_frames = np.minimum(input_raw['hand_left']['left_lunate_bone'][:, 1],
+                               input_raw['hand_right']['right_lunate_bone'][:, 1]) < threshold
+
+    active_frame_indices = np.argwhere(active_frames).squeeze()
+    return active_frame_indices
+
+def process_hands(input_raw):
     keys = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',
             'left_eyebrow_47', 'left_eyebrow_49', 'nose_54', 'nose_56', 'nose_58',
             'right_eye_59', 'right_eye_60', 'right_eye_62', 'right_eye_63', 'left_eye_65', 'left_eye_66', 'left_eye_68', 'left_eye_69',
             'mouth_83', 'mouth_85', 'mouth_87', 'mouth_89']
-    # Convert dictionary values to arrays and apply transpose
+    active_frame_indices = get_active_frames(input_raw)
+    active_frame_indices = active_frame_indices if active_frame_indices.size > 10 else np.arange(
+        0, len(input_raw))
+    input_raw = {**input_raw['face']}
+    
+    input = np.array([input_raw[jn] for jn in keys]).transpose(1, 0, 2)
+    
+    input = input[active_frame_indices, ...].transpose(1, 0, 2)
+    a={"face": input}
+    return a
+    
 
-    input = np.array([input_raw[jn] for jn in keys]).transpose(2, 1, 0)
+def process_skeleton(input_raw, nodes):
+    # print(input_raw)
+    keys = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',
+            'left_eyebrow_47', 'left_eyebrow_49', 'nose_54', 'nose_56', 'nose_58',
+            'right_eye_59', 'right_eye_60', 'right_eye_62', 'right_eye_63', 'left_eye_65', 'left_eye_66', 'left_eye_68', 'left_eye_69',
+            'mouth_83', 'mouth_85', 'mouth_87', 'mouth_89']
+    
+    """active_frame_indices = get_active_frames(input_raw)
+    active_frame_indices = active_frame_indices if active_frame_indices.size > 10 else np.arange(
+        0, len(input))"""
+    
+    
+    input_raw = {**input_raw['face']}
+    input = np.array([input_raw[jn] for jn in range(21)]).transpose(2, 1, 0)
+
+    """input = input[active_frame_indices, ...]
+    input = input.transpose(2, 0, 1)"""
+    
+    
     input = np.expand_dims(input, axis=-1)
+   
+    
+    #active frameleri bul
+
+    
+    # Convert dictionary values to arrays and apply transpose
+    #input = np.array([input_raw[jn] for jn in keys]).transpose(2, 1, 0)
+    
     # .transpose(1,0,2)
     #print(input.shape)
     return input
+
 def custom_collate_fn(batch):
     # Find the maximum sequence length
     #batch-> 4 tüm batchler
@@ -112,6 +157,16 @@ def custom_collate_fn(batch):
     #print(batch[0][0])
     max_length = max(
         len(sample[0]['face']['right_eyebrow_40']) for sample in batch)
+    
+    print(max_length)
+    for i,sample in enumerate(batch):
+        a = process_hands(sample[0])
+        batch[i][0]['face'] = a['face']
+        
+    
+    max_length = max(
+        len(sample[0]['face'][0]) for sample in batch)
+    print(max_length)
     # print(batch[0]['label'])
     # print(max_length)
     keys_to_use = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',
@@ -121,7 +176,12 @@ def custom_collate_fn(batch):
 
     # Initialize the tensors for the padded batch
     padded_batch_list = [
-        {'face': {key: [None] * max_length for key in keys_to_use}} for _ in range(len(batch))]
+        {'face': {key: [None] * max_length for key in range(21)}} for _ in range(len(batch))]
+    for i in range(len(batch)):
+        padded_batch_list[i]['pose']=batch[i][0]['pose']
+        padded_batch_list[i]['hand_left'] = batch[i][0]['hand_left']
+        padded_batch_list[i]['hand_right'] = batch[i][0]['hand_right']
+        
     
     a={}
 
@@ -132,7 +192,7 @@ def custom_collate_fn(batch):
 
     # Fill the tensors with the data from the batch
     for i,sample in enumerate(batch):
-        for key in (keys_to_use):
+        for key in range(21):
             #print(key)
             # Get the data for this key
             data = sample[0]['face'][key]
@@ -164,11 +224,12 @@ def custom_collate_fn(batch):
             padded_batch[0][key] = torch.from_numpy(
                 padded_batch[0][key])
             # print(padded_batch)"""
+    
     padded_batch_list_tensor = torch.stack(
         [torch.from_numpy(arr) for arr in padded_batch_list], dim=0)
     
     a['face']=padded_batch_list_tensor
-    
+    # torch.tensor(img, dtype=torch.float32) folat.tensor
 
     # Convert the labels to PyTorch tensors
     # print([sample['label'] for sample in batch])

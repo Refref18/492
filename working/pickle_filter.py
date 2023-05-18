@@ -7,10 +7,22 @@ from label_all import get_label
 
 
 def datafilter(filename):
+    """
+    threshold = ((((input_raw['pose']['left_hip'][:, 1] + input_raw['pose']['right_hip'][:, 1]) / 2) * 7) +
+                    input_raw['pose']['nose'][:, 1]) / 10
+
+    active_frames = np.minimum(input_raw['hand_left']['left_lunate_bone'][:, 1],
+                                input_raw['hand_right']['right_lunate_bone'][:, 1]) < threshold
+    """
+    
+    active_frame_keys_pose = ['left_hip', 'right_hip', 'nose']
+
+    
     keys_to_keep = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',
                     'left_eyebrow_47', 'left_eyebrow_49', 'nose_54', 'nose_56', 'nose_58',
                     'right_eye_59', 'right_eye_62', 'left_eye_65', 'left_eye_68',
                     'mouth_83', 'mouth_85', 'mouth_87', 'mouth_89']
+    #hands ekle! 2sini de ve pose
 
     # Define the keys for which we want to take the average of adjacent points
     keys_to_average = {'right_eye_60': ['right_eye_59', 'right_eye_62'],
@@ -20,7 +32,7 @@ def datafilter(filename):
 
     # Create a new dictionary to store the filtered data
 
-    filtered_data = {'face': {}, 'label': {}}
+    filtered_data = {'face': {}, 'label': {}, 'pose': {}, 'hand_left':{},'hand_right':{}}
     labels = get_label(filename)
     #print(labels)
     with open(filename, 'rb') as f:
@@ -45,6 +57,12 @@ def datafilter(filename):
             
             filtered_data['face'][key] = np.array([
                 [avg_x, avg_y, avg_prob]] * len(value))
+    for key, value in data['pose'].items():
+        if key in active_frame_keys_pose:
+            filtered_data['pose'][key] = value
+    filtered_data['hand_left']['left_lunate_bone'] = data['hand_left']['left_lunate_bone']
+    filtered_data['hand_right']['right_lunate_bone'] = data['hand_right']['right_lunate_bone']
+        
     filtered_data['label'] = labels
     """
     print(type(filtered_data))
@@ -54,6 +72,7 @@ def datafilter(filename):
     print(type(filtered_data['face']['right_eyebrow_40'][0]))
     """
     #print("filtered_data", filtered_data['label'])
+    print(filtered_data)
     return (filtered_data)
 
 
