@@ -17,7 +17,7 @@ from net.utils.graph_mm import Graph
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 data_dir = 'D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\mmpose-full'
-info_file="D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\updated\\info_filtered.csv"
+info_file="D:\\2022-2023 2.dönem\\Bitirme Projesi\\face\\492\\updated\\info.csv"
 # Initialize dataset and data loader
 graph=Graph(**{"layout": "mmpose", "strategy": "spatial"})
 # create the train set with new label_dict and index_to_label dictionaries
@@ -41,15 +41,15 @@ model = Model( in_channels=3, num_class=744, graph=graph,
               edge_importance_weighting=True).to(device)
 
 # Set loss function and optimizer
-criterion = nn.CrossEntropyLoss()#binary!
-optimizer = optim.AdamW(model.parameters(), lr=0.001) #scheculear lr-> plateu lr tolerance azalmadıysa lr ı düşürüyor , ****multistep 0.0001 25 ve 45 yüzde 10 weight decay 10-5
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.AdamW(model.parameters(), lr=0.0001)
 print(len(dataloader_train))
 # Open CSV file in write mode
 with open('log.csv', mode='w', newline='') as file:
     writer = csv.writer(file)
     # Write header row to CSV
     writer.writerow(['Epoch', 'Train Loss', 'Validation Loss'])
-    for epoch in range(60):
+    for epoch in range(10):
         epoch_loss = 0.0
         #print(len(dataloader_train))
         model.train()
@@ -64,8 +64,6 @@ with open('log.csv', mode='w', newline='') as file:
             #print(inputs['label'], inputs['face'])
             # labels, inputs = inputs['label'], inputs['face']
             optimizer.zero_grad()
-            # PYCM CONFUSION
-            # cborn - heat map dpi artır
             # Initialize model
             outputs = model(img)
             #outputs = model(inputs.to(device))

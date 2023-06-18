@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Graph():
     """ The Graph to model the skeletons extracted by the openpose
 
@@ -34,19 +35,17 @@ class Graph():
         self.hop_dis = get_hop_distance(
             self.num_node, self.edge, max_hop=max_hop)
         self.get_adjacency(strategy)
-        
 
     def __str__(self):
         return self.A
-    
-    def get_unique_nodes(self,connections):
+
+    def get_unique_nodes(self, connections):
         unique_nodes = set()
         for cn in connections:
             unique_nodes.add(cn[0])
             unique_nodes.add(cn[1])
 
         return sorted(unique_nodes)
-
 
     def get_edge(self, layout):
         if layout == 'openpose':
@@ -61,10 +60,47 @@ class Graph():
         elif layout == 'mmpose':
             self.num_node = 21
             self_link = [(i, i) for i in range(self.num_node)]
-            neighbor_link = [(0,1),(0,9),(0,17),(1,9),(1,10),(1,2),(1,3),(1,4),(2,10),(2,11),(2,13),(2,3),(3,13),(3,14),(3,4),(4,14),(4,15),(4,5),(5,15),(5,19),(6,12),(6,13),(6,11),(6,17),(6,18),(6,7),(6,8),(7,8),(7,18),(8,18),(8,19),(8,13),(8,16),(9,17),(9,12),(9,10),(10,11),(10,12),(11,12),(11,13),(12,17),(13,14),(13,16),(14,15),(14,16),(15,16),(15,19),(16,19),(17,18),(17,20),(18,19),(18,20),(19,20)]
+            neighbor_link = [(0, 1), (0, 9), (0, 17), (1, 9), (1, 10), (1, 2), (1, 3), (1, 4), (2, 10), (2, 11), (2, 13), (2, 3), (3, 13), (3, 14), (3, 4), (4, 14), (4, 15), (4, 5), (5, 15), (5, 19), (6, 12), (6, 13), (6, 11), (6, 17), (6, 18), (6, 7), (6, 8), (
+                7, 8), (7, 18), (8, 18), (8, 19), (8, 13), (8, 16), (9, 17), (9, 12), (9, 10), (10, 11), (10, 12), (11, 12), (11, 13), (12, 17), (13, 14), (13, 16), (14, 15), (14, 16), (15, 16), (15, 19), (16, 19), (17, 18), (17, 20), (18, 19), (18, 20), (19, 20)]
             self.edge = self_link + neighbor_link
             self.center = 1
-            self.unique_nodes=self.get_unique_nodes(neighbor_link)
+            self.unique_nodes = self.get_unique_nodes(neighbor_link)
+        # elif layout=='customer settings'
+        #     pass
+        elif layout == 'mmpose_mouth_11':
+            self.num_node = 11
+            self_link = [(i, i) for i in range(self.num_node)]
+            neighbor_link = [(3, 4), (3, 10), (5, 10), (8, 9), (0, 2), (1, 6), (6, 8), (4, 5), (5, 6), (5, 9), (
+                0, 1), (9, 10), (1, 2), (0, 4), (2, 7), (1, 5), (6, 7), (4, 10), (5, 8), (0, 3), (1, 4), (2, 6), (7, 8)]
+            self.edge = self_link + neighbor_link
+            self.center = 1
+            self.unique_nodes = self.get_unique_nodes(neighbor_link)
+        # elif layout=='customer settings'
+        #     pass
+        elif layout == 'mmpose_mouth_23':
+            self.num_node = 23
+            self_link = [(i, i) for i in range(self.num_node)]
+            neighbor_link = [(6, 18), (3, 4), (18, 20), (12, 13), (21, 22), (4, 15), (0, 2), (5, 16), (8, 9), (0, 5), (14, 22), (8, 18), (1, 6), (17, 18), (17, 21), (2, 8), (13, 14), (11, 20), (16, 22), (18, 19), (6, 17), (4, 5), (5, 6), (12, 21), (3, 15), (14, 15), (0, 1), (9, 10), (
+                1, 2), (0, 4), (9, 19), (2, 7), (1, 5), (10, 11), (17, 20), (19, 20), (10, 20), (6, 7), (15, 16), (13, 22), (6, 16), (15, 22), (7, 18), (20, 21), (4, 16), (3, 14), (0, 3), (11, 12), (2, 9), (1, 7), (8, 19), (17, 22), (11, 21), (10, 19), (7, 8), (13, 21), (16, 17)]
+            self.edge = self_link + neighbor_link
+            self.center = 1
+            self.unique_nodes = self.get_unique_nodes(neighbor_link)
+        elif layout == 'mmpose_mouth_8':
+            self.num_node = 8
+            self_link = [(i, i) for i in range(self.num_node)]
+            neighbor_link = [(1, 2), (2, 3), (3, 4), (4, 5),
+                             (5, 6), (6, 7), (1, 7), (0, 1)]
+            self.edge = self_link + neighbor_link
+            self.center = 1
+            self.unique_nodes = self.get_unique_nodes(neighbor_link)
+        elif layout == 'mmpose_mouth_12':
+            self.num_node = 12
+            self_link = [(i, i) for i in range(self.num_node)]
+            neighbor_link = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6),
+                             (6, 7), (7, 8), (8, 9), (9, 10), (10, 11), (1, 11), (0, 1)]
+            self.edge = self_link + neighbor_link
+            self.center = 1
+            self.unique_nodes = self.get_unique_nodes(neighbor_link)
         # elif layout=='customer settings'
         #     pass
         else:
@@ -112,8 +148,8 @@ class Graph():
                     A.append(a_further)
             A = np.stack(A)
             self.A = A
-            #print(self.A)
-            #print(self.unique_nodes)
+            # print(self.A)
+            # print(self.unique_nodes)
         else:
             raise ValueError("Do Not Exist This Strategy")
 
@@ -153,5 +189,3 @@ def normalize_undigraph(A):
             Dn[i, i] = Dl[i]**(-0.5)
     DAD = np.dot(np.dot(Dn, A), Dn)
     return DAD
-
-

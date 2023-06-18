@@ -158,7 +158,6 @@ def custom_collate_fn(batch):
     max_length = max(
         len(sample[0]['face']['right_eyebrow_40']) for sample in batch)
     
-    print(max_length)
     for i,sample in enumerate(batch):
         a = process_hands(sample[0])
         batch[i][0]['face'] = a['face']
@@ -166,7 +165,6 @@ def custom_collate_fn(batch):
     
     max_length = max(
         len(sample[0]['face'][0]) for sample in batch)
-    print(max_length)
     # print(batch[0]['label'])
     # print(max_length)
     keys_to_use = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',

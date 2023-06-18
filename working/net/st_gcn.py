@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from net.utils.tgcn import ConvTemporalGraphical
-from net.utils.graph_mm import Graph
+from working.net.utils.tgcn import ConvTemporalGraphical
+from working.net.utils.graph_mm import Graph
 
 class Model(nn.Module):
     r"""Spatial temporal graph convolutional networks.
@@ -72,8 +72,10 @@ class Model(nn.Module):
         #print(x)
         
         # data normalization
+        #print("A")
         N, C, T, V, M = x.size()
-        print(N, C, T, V, M)
+        #print(x.size())
+        #print(N, C, T, V, M)
         #M=1
         #tek batch için tek T max_length
         
@@ -94,7 +96,9 @@ class Model(nn.Module):
 
         # prediction
         x = self.fcn(x)
+        #x = F.sigmoid(self.fcn(x)) #sigmoid as we use BCELoss
         x = x.view(x.size(0), -1)
+
 
         return x
 

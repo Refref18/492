@@ -2,7 +2,6 @@ import numpy as np
 import os
 import glob
 import pickle
-from label_all import get_label
 # Define the list of keys we want to keep
 
 

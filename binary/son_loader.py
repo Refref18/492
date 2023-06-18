@@ -9,7 +9,7 @@ import pickle
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from binary_datafilter import datafilter
+from binary.binary_datafilter import datafilter
 
 #from working.pickle_filter import datafilter
 #from working.label_all import get_label
@@ -58,7 +58,7 @@ class VideoPoseDataset(Dataset):
     def __getitem__(self, idx):
         row = self.info_df.iloc[idx]
         label = self.label_dict[row['Negativity']]
-        print(label)
+        #print(label)
         #print(row)
         user, repeat = row['UserID'].split('_')[1], row['RepeatID']
         folder = os.path.join(self.root_dir, row['ClassID'])
@@ -160,7 +160,7 @@ def custom_collate_fn(batch):
     max_length = max(
         len(sample[0]['face']['right_eyebrow_40']) for sample in batch)
     
-    print(max_length)
+    #print(max_length)
     for i,sample in enumerate(batch):
         a = process_hands(sample[0])
         batch[i][0]['face'] = a['face']
@@ -168,7 +168,7 @@ def custom_collate_fn(batch):
     
     max_length = max(
         len(sample[0]['face'][0]) for sample in batch)
-    print(max_length)
+    #print(max_length)
     # print(batch[0]['label'])
     # print(max_length)
     keys_to_use = ['right_eyebrow_40', 'right_eyebrow_42', 'right_eyebrow_44', 'left_eyebrow_45',
