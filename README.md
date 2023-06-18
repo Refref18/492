@@ -45,8 +45,8 @@ Please refer to the project documentation and source code for detailed instructi
 
 For any questions, feedback, or inquiries related to the project, please contact:
 
-- Email: [your-email@example.com](mailto:refikakalyoncu@gmail.com)
-- GitHub: [YourGitHubUsername](https://github.com/refref18)
+- Email: [refikakalyoncu@gmail.com](mailto:refikakalyoncu@gmail.com)
+- GitHub: [refref18](https://github.com/refref18)
 
 Feel free to reach out with any inquiries or contributions to enhance the project.
 
